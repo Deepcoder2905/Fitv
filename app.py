@@ -179,7 +179,9 @@ def get_profile():
         }), 200
         
     except Exception as e:
+        print(f"Error in /api/stats: {e}")
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/api/squat-session', methods=['POST'])
 # @jwt_required()
