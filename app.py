@@ -164,7 +164,7 @@ def refresh():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/profile', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_profile():
     """Get current user profile"""
     try:
