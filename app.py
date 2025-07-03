@@ -24,8 +24,8 @@ app.config.from_object(Config)
 CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], supports_credentials=True)
 jwt = JWTManager(app)
 db.init_app(app)
-redis_url = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
-redis_client = redis.Redis.from_url(redis_url)
+REDIS_URL = os.environ.get("REDIS_URL", "redis://localhost:6379")
+redis_client = redis.from_url(REDIS_URL, decode_responses=True)
 
 with app.app_context():
     db.create_all()
