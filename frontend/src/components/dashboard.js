@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import API_BASE_URL from '../config';
 
 const Dashboard = () => {
     const [squatStats, setSquatStats] = useState(null);
@@ -8,51 +9,119 @@ const Dashboard = () => {
     const [form, setForm] = useState({ username: '', email: '' });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
     useEffect(() => {
+        checkAuth();
+    }, []);
+
+    const checkAuth = () => {
+        const accessToken = localStorage.getItem('access_token');
+        console.log('Access token from localStorage:', accessToken);
+
+        if (!accessToken) {
+            console.log('No access token found, redirecting to login');
+            window.location.href = '/';
+            return;
+        }
+
+        // Check if token looks valid (should be a JWT token with 3 parts separated by dots)
+        const tokenParts = accessToken.split('.');
+        if (tokenParts.length !== 3) {
+            console.error('Invalid token format, redirecting to login');
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
+            return;
+        }
+
+        setIsAuthenticated(true);
         fetchStats();
         fetchPushupStats();
         fetchUser();
-    }, []);
+    };
 
     const fetchStats = async () => {
         try {
             const accessToken = localStorage.getItem('access_token');
-            const res = await fetch('/api/stats', {
+            console.log('Fetching stats with token:', accessToken ? 'Present' : 'Missing');
+
+            if (!accessToken) {
+                console.error('No access token found');
+                return;
+            }
+
+            const res = await fetch(`${API_BASE_URL}/api/stats`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
+
             if (res.ok) {
                 const data = await res.json();
                 setSquatStats(data.stats);
+            } else {
+                console.error('Stats fetch failed:', res.status, res.statusText);
+                const errorData = await res.json().catch(() => ({}));
+                console.error('Error details:', errorData);
             }
-        } catch (err) { /* ignore */ }
+        } catch (err) {
+            console.error('Stats fetch error:', err);
+        }
     };
 
     const fetchPushupStats = async () => {
         try {
             const accessToken = localStorage.getItem('access_token');
-            const res = await fetch('/api/pushup-stats', {
+            console.log('Fetching pushup stats with token:', accessToken ? 'Present' : 'Missing');
+
+            if (!accessToken) {
+                console.error('No access token found');
+                return;
+            }
+
+            const res = await fetch(`${API_BASE_URL}/api/pushup-stats`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
+
             if (res.ok) {
                 const data = await res.json();
                 setPushupStats(data.stats);
+            } else {
+                console.error('Pushup stats fetch failed:', res.status, res.statusText);
+                const errorData = await res.json().catch(() => ({}));
+                console.error('Error details:', errorData);
             }
-        } catch (err) { /* ignore */ }
+        } catch (err) {
+            console.error('Pushup stats fetch error:', err);
+        }
     };
 
     const fetchUser = async () => {
         try {
             const accessToken = localStorage.getItem('access_token');
-            const res = await fetch('/api/profile', {
+            console.log('Fetching user profile with token:', accessToken ? 'Present' : 'Missing');
+
+            if (!accessToken) {
+                console.error('No access token found');
+                return;
+            }
+
+            const res = await fetch(`${API_BASE_URL}/api/profile`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
             });
+
             if (res.ok) {
                 const data = await res.json();
                 setUser(data.user);
                 setForm({ username: data.user.username, email: data.user.email });
+            } else {
+                console.error('Profile fetch failed:', res.status, res.statusText);
+                const errorData = await res.json().catch(() => ({}));
+                console.error('Error details:', errorData);
             }
-        } catch (err) { /* ignore */ }
+        } catch (err) {
+            console.error('Profile fetch error:', err);
+        }
     };
 
     const handleEdit = () => {
@@ -71,8 +140,7 @@ const Dashboard = () => {
         setError('');
         try {
             const accessToken = localStorage.getItem('access_token');
-            // Assume PATCH /api/profile for updating user info (implement in backend if not present)
-            const res = await fetch('/api/profile', {
+            const res = await fetch(`${API_BASE_URL}/api/profile`, {
                 method: 'PATCH',
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
@@ -92,6 +160,14 @@ const Dashboard = () => {
             setError('Network error');
         }
     };
+
+    if (!isAuthenticated) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 flex items-center justify-center">
+                <div className="text-white text-xl">Checking authentication...</div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-900 via-purple-900 to-indigo-900 p-6 flex flex-col items-center">
