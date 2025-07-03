@@ -19,7 +19,10 @@ from sqlalchemy import func, desc
 
 app = Flask(__name__, static_folder="frontend/build", static_url_path="")
 app.config.from_object(Config)
-
+app.config['JWT_TOKEN_LOCATION'] = ['cookies']
+app.config['JWT_ACCESS_COOKIE_NAME'] = 'access_token_cookie'
+app.config['JWT_COOKIE_SECURE'] = False  # True in production (HTTPS)
+app.config['JWT_COOKIE_CSRF_PROTECT'] = False
 # Initialize extensions
 CORS(app)
 jwt = JWTManager(app)
