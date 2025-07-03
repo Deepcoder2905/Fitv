@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify,send_from_directory
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from flask_sqlalchemy import SQLAlchemy
@@ -17,33 +17,19 @@ except ImportError:
 from sqlalchemy import func, desc
 
 
-app = Flask(__name__, static_folder="frontend/build", static_url_path="")
+app = Flask(__name__)
 app.config.from_object(Config)
-app.config['JWT_TOKEN_LOCATION'] = ['cookies']
-app.config['JWT_ACCESS_COOKIE_NAME'] = 'access_token_cookie'
-app.config['JWT_COOKIE_SECURE'] = False  # True in production (HTTPS)
-app.config['JWT_COOKIE_CSRF_PROTECT'] = False
+
 # Initialize extensions
-CORS(app)
+CORS(app, origins=["http://localhost:3000", "http://127.0.0.1:3000"], supports_credentials=True)
 jwt = JWTManager(app)
 db.init_app(app)
-redis_url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+redis_url = os.environ.get('REDIS_URL', 'redis://redis:6379/0')
 redis_client = redis.Redis.from_url(redis_url)
 
 with app.app_context():
     db.create_all()
-import os
 
-
-
-@app.route("/", defaults={"path": ""})
-@app.route("/<path:path>")
-def serve(path):
-    file_path = os.path.join(app.static_folder, path)
-    if path != "" and os.path.exists(file_path):
-        return send_from_directory(app.static_folder, path)
-    else:
-        return send_from_directory(app.static_folder, "index.html")
 # Validation functions
 def is_valid_email(email):
     """Validate email format"""
@@ -58,17 +44,6 @@ def is_valid_username(username):
     """Validate username format"""
     return len(username) >= 3 and username.isalnum()
 
-@jwt.unauthorized_loader
-def unauthorized_response(callback):
-    return jsonify({"error": "Missing Authorization Header"}), 401
-
-@jwt.invalid_token_loader
-def invalid_token_callback(reason):
-    return jsonify({"error": "Invalid Token", "message": reason}), 422
-
-@jwt.expired_token_loader
-def expired_token_callback(jwt_header, jwt_payload):
-    return jsonify({"error": "Token expired"}), 401
 
 @app.route('/api/register', methods=['POST'])
 def register():
@@ -111,8 +86,8 @@ def register():
         db.session.commit()
         
         # Create tokens
-        set_access_cookies(response, access_token)
-        set_refresh_cookies(response, refresh_token)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         return jsonify({
             "message": "User registered successfully",
@@ -149,8 +124,8 @@ def login():
             return jsonify({"error": "Invalid username/email or password"}), 401
         
         # Create tokens
-        set_access_cookies(response, access_token)
-        set_refresh_cookies(response, refresh_token)
+        access_token = create_access_token(identity=str(user.id))
+        refresh_token = create_refresh_token(identity=str(user.id))
         
         return jsonify({
             "message": "Login successful",
@@ -168,7 +143,7 @@ def refresh():
     """Refresh access token"""
     try:
         current_user_id = get_jwt_identity()
-        new_access_token = create_access_token(identity=current_user_id)
+        new_access_token = create_access_token(identity=str(current_user_id))
         
         return jsonify({
             "access_token": new_access_token
@@ -177,12 +152,46 @@ def refresh():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/debug-token', methods=['GET'])
+@jwt_required()
+def debug_token():
+    """Debug endpoint to check JWT token"""
+    try:
+        from flask_jwt_extended import get_jwt
+        current_user_id = get_jwt_identity()
+        jwt_data = get_jwt()
+        
+        print(f"Debug Token - Identity: {current_user_id}, Type: {type(current_user_id)}")
+        print(f"JWT Data: {jwt_data}")
+        
+        # Check if user exists
+        user = User.query.get(current_user_id)
+        user_exists = user is not None
+        
+        return jsonify({
+            "identity": current_user_id,
+            "identity_type": str(type(current_user_id)),
+            "jwt_data": jwt_data,
+            "user_exists": user_exists,
+            "user_id": user.id if user else None
+        }), 200
+        
+    except Exception as e:
+        print(f"Debug token error: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
 @app.route('/api/profile', methods=['GET'])
 @jwt_required()
 def get_profile():
     """Get current user profile"""
     try:
         current_user_id = get_jwt_identity()
+        print(f"JWT Identity: {current_user_id}, Type: {type(current_user_id)}")
+        
+        # Ensure current_user_id is an integer
+        if current_user_id is not None:
+            current_user_id = int(current_user_id)
+        
         user = User.query.get(current_user_id)
         
         if not user:
@@ -193,9 +202,59 @@ def get_profile():
         }), 200
         
     except Exception as e:
-        print(f"Error in /api/stats: {e}")
+        print(f"Profile error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/profile', methods=['PATCH'])
+@jwt_required()
+def update_profile():
+    """Update current user profile"""
+    try:
+        current_user_id = get_jwt_identity()
+        user = User.query.get(current_user_id)
+        
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        
+        data = request.get_json()
+        if not data:
+            return jsonify({"error": "No data provided"}), 400
+        
+        # Update fields if provided
+        if 'username' in data:
+            username = data['username'].strip()
+            if not is_valid_username(username):
+                return jsonify({"error": "Username must be at least 3 characters long and contain only letters and numbers"}), 400
+            
+            # Check if username is already taken by another user
+            existing_user = User.query.filter_by(username=username).first()
+            if existing_user and existing_user.id != current_user_id:
+                return jsonify({"error": "Username already exists"}), 409
+            
+            user.username = username
+        
+        if 'email' in data:
+            email = data['email'].strip().lower()
+            if not is_valid_email(email):
+                return jsonify({"error": "Invalid email format"}), 400
+            
+            # Check if email is already taken by another user
+            existing_user = User.query.filter_by(email=email).first()
+            if existing_user and existing_user.id != current_user_id:
+                return jsonify({"error": "Email already exists"}), 409
+            
+            user.email = email
+        
+        db.session.commit()
+        
+        return jsonify({
+            "message": "Profile updated successfully",
+            "user": user.to_dict()
+        }), 200
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/squat-session', methods=['POST'])
 @jwt_required()
@@ -235,6 +294,11 @@ def get_user_stats():
     """Get user statistics"""
     try:
         current_user_id = get_jwt_identity()
+        print(f"Stats - JWT Identity: {current_user_id}, Type: {type(current_user_id)}")
+        
+        # Ensure current_user_id is an integer
+        if current_user_id is not None:
+            current_user_id = int(current_user_id)
         
         # Get user's squat sessions
         sessions = SquatSession.query.filter_by(user_id=current_user_id).all()
@@ -259,6 +323,7 @@ def get_user_stats():
             }), 200
         
     except Exception as e:
+        print(f"Stats error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/sessions', methods=['GET'])
@@ -319,6 +384,7 @@ def reset_stats():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/exercise-ai')
+@jwt_required()
 def exercise_ai():
     query = request.args.get('query', '').strip()
     if not query:
@@ -341,7 +407,6 @@ def exercise_ai():
             "top_p": 0.95,
             "top_k": 40,
             "max_output_tokens": 8192,
-            "response_mime_type": "text/plain"
         }
         model = genai.GenerativeModel(model_name="gemini-2.5-pro",
     generation_config=generation_config,)
@@ -361,6 +426,7 @@ Note: if the input is not an exercise, just say "I'm sorry, I can't help with th
         redis_client.setex(cache_key, 60*60*24*3, json.dumps(result))  # Cache for 3 days
         return jsonify(result)
     except Exception as e:
+        print("EXERCISE-AI ERROR:", e)
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/pushup-session', methods=['POST'])
@@ -395,6 +461,12 @@ def get_pushup_stats():
     """Get user pushup statistics"""
     try:
         current_user_id = get_jwt_identity()
+        print(f"Pushup Stats - JWT Identity: {current_user_id}, Type: {type(current_user_id)}")
+        
+        # Ensure current_user_id is an integer
+        if current_user_id is not None:
+            current_user_id = int(current_user_id)
+        
         sessions = PushupSession.query.filter_by(user_id=current_user_id).all()
         total_pushups = sum(session.pushup_count for session in sessions)
         sessions_completed = len(sessions)
@@ -412,6 +484,7 @@ def get_pushup_stats():
             "recent_sessions": recent_sessions
         }), 200
     except Exception as e:
+        print(f"Pushup stats error: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/pushup-sessions', methods=['GET'])
