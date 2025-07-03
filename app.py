@@ -111,8 +111,8 @@ def register():
         db.session.commit()
         
         # Create tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
         
         return jsonify({
             "message": "User registered successfully",
@@ -149,8 +149,8 @@ def login():
             return jsonify({"error": "Invalid username/email or password"}), 401
         
         # Create tokens
-        access_token = create_access_token(identity=user.id)
-        refresh_token = create_refresh_token(identity=user.id)
+        set_access_cookies(response, access_token)
+        set_refresh_cookies(response, refresh_token)
         
         return jsonify({
             "message": "Login successful",
