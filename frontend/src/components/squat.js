@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import API_BASE_URL from '../config';
 import { Camera, Play, Pause, Square, RotateCcw, Activity, Trophy, Target, Clock, Loader } from 'lucide-react';
 
 const SquatCounter = () => {
@@ -213,7 +214,7 @@ const SquatCounter = () => {
                 return;
             }
 
-            const response = await fetch('/api/stats', {
+            const response = await fetch(`${API_BASE_URL}/api/stats`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json'
@@ -694,7 +695,7 @@ const SquatCounter = () => {
                     return;
                 }
 
-                const response = await fetch('/api/squat-session', {
+                const response = await fetch(`${API_BASE_URL}/api/squat-session`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
