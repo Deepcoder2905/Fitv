@@ -184,7 +184,7 @@ def get_profile():
 
 
 @app.route('/api/squat-session', methods=['POST'])
-# @jwt_required()
+@jwt_required()
 def save_squat_session():
     """Save a completed squat session"""
     try:
@@ -216,7 +216,7 @@ def save_squat_session():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/stats', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_user_stats():
     """Get user statistics"""
     try:
@@ -248,7 +248,7 @@ def get_user_stats():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/sessions', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_sessions():
     """Get all squat sessions for current user"""
     try:
@@ -264,7 +264,7 @@ def get_sessions():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/sessions/<int:session_id>', methods=['DELETE'])
-# @jwt_required()
+@jwt_required()
 def delete_session(session_id):
     """Delete a specific session"""
     try:
@@ -286,7 +286,7 @@ def delete_session(session_id):
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/reset-stats', methods=['POST'])
-# @jwt_required()
+@jwt_required()
 def reset_stats():
     """Reset all user statistics and sessions"""
     try:
@@ -350,7 +350,7 @@ Note: if the input is not an exercise, just say "I'm sorry, I can't help with th
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/pushup-session', methods=['POST'])
-# @jwt_required()
+@jwt_required()
 def save_pushup_session():
     """Save a completed pushup session"""
     try:
@@ -376,7 +376,7 @@ def save_pushup_session():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/pushup-stats', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_pushup_stats():
     """Get user pushup statistics"""
     try:
@@ -401,7 +401,7 @@ def get_pushup_stats():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/pushup-sessions', methods=['GET'])
-# @jwt_required()
+@jwt_required()
 def get_pushup_sessions():
     """Get all pushup sessions for current user"""
     try:
@@ -415,7 +415,7 @@ def get_pushup_sessions():
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/pushup-sessions/<int:session_id>', methods=['DELETE'])
-# @jwt_required()
+@jwt_required()
 def delete_pushup_session(session_id):
     """Delete a specific pushup session"""
     try:
@@ -433,7 +433,7 @@ def delete_pushup_session(session_id):
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/reset-pushup-stats', methods=['POST'])
-# @jwt_required()
+@jwt_required()
 def reset_pushup_stats():
     """Reset all user pushup statistics and sessions"""
     try:
