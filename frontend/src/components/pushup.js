@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import API_BASE_URL from '../config';
 import { Camera, Play, Pause, Square, RotateCcw, Activity, Trophy, Target, Clock, Loader } from 'lucide-react';
 
 const PushUpCounter = () => {
@@ -208,7 +209,7 @@ const PushUpCounter = () => {
                 console.error('No access token found');
                 return;
             }
-            const response = await fetch('/api/pushup-stats', {
+            const response = await fetch(`${API_BASE_URL}/api/pushup-stats`, {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json'
@@ -562,7 +563,7 @@ const PushUpCounter = () => {
                     console.error('No access token found');
                     return;
                 }
-                const response = await fetch('/api/pushup-session', {
+                const response = await fetch(`${API_BASE_URL}/api/pushup-session`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
