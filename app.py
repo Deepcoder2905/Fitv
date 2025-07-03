@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,send_from_directory
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, create_refresh_token, jwt_required, get_jwt_identity
 from flask_sqlalchemy import SQLAlchemy
@@ -17,7 +17,7 @@ except ImportError:
 from sqlalchemy import func, desc
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder="frontend/build", static_url_path="")
 app.config.from_object(Config)
 
 # Initialize extensions
@@ -29,7 +29,18 @@ redis_client = redis.Redis.from_url(redis_url)
 
 with app.app_context():
     db.create_all()
+import os
 
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve(path):
+    file_path = os.path.join(app.static_folder, path)
+    if path != "" and os.path.exists(file_path):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, "index.html")
 # Validation functions
 def is_valid_email(email):
     """Validate email format"""
