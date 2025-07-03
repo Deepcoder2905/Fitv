@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import API_BASE_URL from '../config';
 
 const Leaderboard = () => {
     const [mode, setMode] = useState('all'); // 'all' or 'daily'
@@ -13,8 +14,8 @@ const Leaderboard = () => {
     const fetchLeaderboards = async () => {
         setLoading(true);
         try {
-            const squatRes = await fetch(`/api/leaderboard/squats${mode === 'daily' ? '/daily' : ''}`);
-            const pushupRes = await fetch(`/api/leaderboard/pushups${mode === 'daily' ? '/daily' : ''}`);
+            const squatRes = await fetch(`${API_BASE_URL}/api/leaderboard/squats${mode === 'daily' ? '/daily' : ''}`);
+            const pushupRes = await fetch(`${API_BASE_URL}/api/leaderboard/pushups${mode === 'daily' ? '/daily' : ''}`);
             const squatData = await squatRes.json();
             const pushupData = await pushupRes.json();
             setSquats(squatData.leaderboard || []);
