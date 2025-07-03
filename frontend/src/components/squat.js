@@ -213,7 +213,7 @@ const SquatCounter = () => {
                 return;
             }
 
-            const response = await fetch('http://localhost:8000/api/stats', {
+            const response = await fetch('/api/stats', {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json'
@@ -694,7 +694,7 @@ const SquatCounter = () => {
                     return;
                 }
 
-                const response = await fetch('http://localhost:8000/api/squat-session', {
+                const response = await fetch('/api/squat-session', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${accessToken}`,
