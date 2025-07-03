@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import API_BASE_URL from '../config';
 
 const SignUpComponent = ({ setUser, setCurrentPage }) => {
   const [formData, setFormData] = useState({
@@ -34,7 +35,7 @@ const SignUpComponent = ({ setUser, setCurrentPage }) => {
     }
 
     try {
-      const response = await fetch('/api/register', {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
