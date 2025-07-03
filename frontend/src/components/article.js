@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE_URL from '../config';
 import { Loader } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -16,7 +17,12 @@ const Article = () => {
         setError('');
         setResult(null);
         try {
-            const res = await fetch(`/api/exercise-ai?query=${encodeURIComponent(query)}`);
+            const accessToken = localStorage.getItem('access_token');
+            const res = await fetch(`${API_BASE_URL}/api/exercise-ai?query=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`
+                }
+            });
             if (!res.ok) throw new Error('Failed to fetch AI summary');
             const data = await res.json();
             setResult(data);
