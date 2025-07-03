@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import API_BASE_URL from '../config';
 
 const LoginComponent = ({ setUser, setCurrentPage }) => {
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -12,7 +13,7 @@ const LoginComponent = ({ setUser, setCurrentPage }) => {
     setError('');
 
     try {
-      const response = await fetch('/api/login', {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -110,4 +111,3 @@ const LoginComponent = ({ setUser, setCurrentPage }) => {
 };
 
 export default LoginComponent;
-
